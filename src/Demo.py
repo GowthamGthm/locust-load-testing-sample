@@ -1,7 +1,6 @@
 import time
-from locust import HttpUser, task, between, events
+from locust import HttpUser, task, between
 from requests_toolbelt.multipart.encoder import MultipartEncoder
-
 
 class FileUploadUser(HttpUser):
     wait_time = between(1, 5)  # Simulate user think time
@@ -25,22 +24,33 @@ class FileUploadUser(HttpUser):
         # Time taken to upload the file
         upload_end_time = time.time()
         upload_time = upload_end_time - upload_start_time
-        print(f"Time taken to upload the file: {upload_time:.2f} seconds")
 
         # Total time from the start of the request until receiving the response
-        total_time = upload_end_time - upload_start_time
-
-        # Time taken to receive the response
-        response_time = time.time() - upload_start_time
+        response_time = response.elapsed.total_seconds()
 
         # Estimated server processing time (total time minus upload time)
-        server_processing_time = response_time - upload_time
+        server_processing_time = response_time - (upload_end_time - upload_start_time)
+
+        print("--------------------------------------------------------------")
+        print(f"Time taken to upload the file: {upload_time:.2f} seconds")
         print(f"Estimated server processing time: {server_processing_time:.2f} seconds")
         print(f"Total time for the request: {response_time:.2f} seconds")
 
         # Handle the response (optional)
         if response.status_code == 200:
-            print("File uploaded successfully.")
-            response.headers.get("Process-Time" , 0);
+            print(f"File uploaded successfully: {response.status_code}")
+            process_time = int(response.headers.get("Process-Time", 0))
+
+            start = int(response.headers.get("start", 0))
+            end = int(response.headers.get("end", 0))
+            finish = int(response.headers.get("finish", 0))
+
+            print(f"Start Time: {start} seconds.")
+            print(f"End Time: {end} seconds.")
+            print(f"Finish Time: {finish} seconds.")
+
+            print(f"Process-Time from server is: {process_time / 1000:.2f} seconds.")
         else:
             print(f"Failed to upload file. Status code: {response.status_code}")
+
+        print("--------------------------------------------------------------")
